@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
 	
 	unidad_traduccion();
 
-	match(CEOF, 10);
+	match(CEOF, 9);
 
 	last_call=1;
 
@@ -30,7 +30,7 @@ void declaraciones()
 {	
 	especificador_tipo();
 	
-	match(CIDENT, 10);
+	match(CIDENT, 17);
 	
 	especificador_declaracion();
 }
@@ -57,7 +57,7 @@ void especificador_tipo()
 			break;
 			
 		default:
-			error_handler(10);
+			error_handler(18);
 	}
 }
 
@@ -78,19 +78,19 @@ void especificador_declaracion()
 			break;
 		
 		default:
-			error_handler(10);
+			error_handler(19);
 	}
 }
 
 
 void definicion_funcion()
 {
-	match(CPAR_ABR, 10);
+	match(CPAR_ABR, 20);
 
 	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
 		lista_declaraciones_param();
 
-	match(CPAR_CIE, 10);
+	match(CPAR_CIE, 21);
 
 	proposicion_compuesta();
 }
@@ -115,26 +115,26 @@ void declaracion_parametro()
 	if(lookahead_in(CAMPER))
 		scanner();
 
-	match(CIDENT, 10);
+	match(CIDENT, 17);
 
 	if(lookahead_in(CCOR_ABR))
 	{
 		scanner();
-		match(CCOR_CIE, 10);
+		match(CCOR_CIE, 22);
 	}
 }
 
 
 void lista_declaraciones_init()
 {
-	match(CIDENT, 10);
+	match(CIDENT, 17);
 
 	declarador_init();
 
 	while(lookahead_in(CCOMA))
 	{
 		scanner();
-		match(CIDENT, 10);
+		match(CIDENT, 17);
 		declarador_init();
 	}
 }
@@ -150,7 +150,7 @@ void declaracion_variable()
 		lista_declaraciones_init();
 	}
 
-	match(CPYCOMA, 10);
+	match(CPYCOMA, 23);
 }
 
 
@@ -169,14 +169,14 @@ void declarador_init()
 			if(lookahead_in(CCONS_ENT))
 				constante();
 
-			match(CCOR_CIE, 10);
+			match(CCOR_CIE, 22);
 
 			if(lookahead_in(CASIGNAC))
 			{
 				scanner();
-				match(CLLA_ABR, 10);
+				match(CLLA_ABR, 24);
 				lista_inicializadores();
-				match(CLLA_CIE, 10);
+				match(CLLA_CIE, 25);
 			}
 			break;
 	}
@@ -197,7 +197,7 @@ void lista_inicializadores()
 
 void proposicion_compuesta()
 {
-	match(CLLA_ABR, 10);
+	match(CLLA_ABR, 24);
 
 	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
 		lista_declaraciones();
@@ -207,7 +207,7 @@ void proposicion_compuesta()
 						 CIF | CWHILE | CIN | COUT | CPYCOMA | CRETURN))
 		lista_proposiciones();
 
-	match(CLLA_CIE, 10);
+	match(CLLA_CIE, 25);
 }
 
 
@@ -226,7 +226,7 @@ void declaracion()
 
 	lista_declaraciones_init();
 
-	match(CPYCOMA, 10);
+	match(CPYCOMA, 23);
 }
 
 
@@ -280,20 +280,20 @@ void proposicion()
 			break;
 		
 		default:
-			error_handler(10);
+			error_handler(26);
 	}
 }
 
 
 void proposicion_iteracion()
 {
-	match(CWHILE, 10);
+	match(CWHILE, 27);
 
-	match(CPAR_ABR, 10);
+	match(CPAR_ABR, 20);
 
 	expresion();
 
-	match(CPAR_CIE, 10);
+	match(CPAR_CIE, 21);
 
 	proposicion();
 }
@@ -301,13 +301,13 @@ void proposicion_iteracion()
 
 void proposicion_seleccion()
 {
-	match(CIF, 10);
+	match(CIF, 28);
 
-	match(CPAR_ABR, 10);
+	match(CPAR_ABR, 20);
 
 	expresion();
 
-	match(CPAR_CIE, 10);
+	match(CPAR_CIE, 21);
 
 	proposicion();
 
@@ -326,7 +326,7 @@ void proposicion_e_s()
 		case CIN:
 			scanner();
 			
-			match(CSHR, 10);
+			match(CSHR, 30);
 			
 			variable();
 			
@@ -336,14 +336,14 @@ void proposicion_e_s()
 				variable();
 			}
 
-			match(CPYCOMA, 10);
+			match(CPYCOMA, 23);
 			
 			break;
 		
 		case COUT:
 			scanner();
 
-			match(CSHL, 10);
+			match(CSHL, 31);
 			
 			expresion();
 
@@ -353,12 +353,12 @@ void proposicion_e_s()
 				expresion();
 			}
 
-			match(CPYCOMA, 10);
+			match(CPYCOMA, 23);
 			
 			break;
 		
 		default:
-			error_handler(10);
+			error_handler(26);
 	}
 }
 
@@ -369,7 +369,7 @@ void proposicion_retorno()
 	
 	expresion();
 	
-	match(CPYCOMA, 10);
+	match(CPYCOMA, 23);
 }
 
 
@@ -378,7 +378,7 @@ void proposicion_expresion()
 	if(lookahead_in(CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR))
 		expresion();
 
-	match(CPYCOMA, 10);
+	match(CPYCOMA, 23);
 }
 
 
@@ -464,7 +464,7 @@ void factor()
 		case CPAR_ABR:
 			scanner();
 			expresion();
-			match(CPAR_CIE, 10);
+			match(CPAR_CIE, 21);
 			break;
 			
 		case CNEG:
@@ -473,14 +473,14 @@ void factor()
 			break;
 			
 		default:
-			error_handler(10);
+			error_handler(32);
 	}
 }
 
 
 void variable()
 {
-	match(CIDENT, 10);
+	match(CIDENT, 17);
 
 	/* El alumno debera verificar con una consulta a TS
 	si, siendo la variable un arreglo, corresponde o no
@@ -490,21 +490,21 @@ void variable()
 	{
 		scanner();
 		expresion();
-		match(CCOR_CIE, 10);
+		match(CCOR_CIE, 22);
 	}
 }
 
 
 void llamada_funcion()
 {
-	match(CIDENT, 10);
+	match(CIDENT, 17);
 	
-	match(CPAR_ABR, 10);
+	match(CPAR_ABR, 20);
 	
 	if(lookahead_in(CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR))
 		lista_expresiones();
 
-	match(CPAR_CIE, 10);
+	match(CPAR_CIE, 21);
 }
 
 
@@ -537,6 +537,6 @@ void constante()
 			break;
 		
 		default:
-			error_handler(10);
+			error_handler(33);
 	}
 }

@@ -79,3 +79,14 @@ set lookahead_in(set conjunto)
 {
 	return lookahead() & conjunto;
 }
+
+void test(set conj1, set conj2, int ne) {
+	if (!lookahead_in(conj1)) {
+		error_handler(ne);
+		//error_handler(COD_IMP_ERRORES);
+		conj1 = conj1 | conj2;
+		while (!lookahead_in(conj1)) {
+			scanner();
+		}
+	}
+}

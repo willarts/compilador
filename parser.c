@@ -1,6 +1,4 @@
 #include "parser.h"
-#include "var_globales.h"
-
 
 int main(int argc, char *argv[])
 {
@@ -157,11 +155,11 @@ void declaracion_variable(set folset)
 	if(lookahead_in(CCOMA))
 	{
 		scanner();
-		lista_declaraciones_init();
+		lista_declaraciones_init(folset | CPYCOMA);
 	}
 
 	match(CPYCOMA, 23);
-	test(folset, NADA, 60)
+	test(folset, NADA, 60);
 }
 
 
@@ -195,7 +193,7 @@ void declarador_init(set folset)
 			break;
 	}
 	test(folset, NADA, 48);
-
+}
 
 void lista_inicializadores(set folset)
 {
@@ -203,7 +201,7 @@ void lista_inicializadores(set folset)
 	test(folset | CCOMA, CCONS_ENT | CCONS_FLO | CCONS_CAR, 63);
 	while(lookahead_in(CCOMA | CCONS_ENT | CCONS_FLO | CCONS_CAR))
 	{
-		match(CCOMA, 64)
+		match(CCOMA, 64);
 		constante(folset | CCOMA | CCONS_ENT | CCONS_FLO | CCONS_CAR);
 		test(folset | CCOMA, CCONS_ENT | CCONS_FLO | CCONS_CAR, 63);
 	}
@@ -212,9 +210,7 @@ void lista_inicializadores(set folset)
 
 void proposicion_compuesta(set folset)
 {
-	test(CLLA_ABR, folset | CVOID | CCHAR | CINT | CFLOAT | CLLA_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
-						 CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR |
-						 CIF | CWHILE | CIN | COUT | CPYCOMA | CRETURN | CLLA_CIE, 49);
+	test(CLLA_ABR, folset , 49);
 
 	match(CLLA_ABR, 24);
 
@@ -344,15 +340,15 @@ void proposicion_seleccion(set folset)
 
 	match(CPAR_ABR, 20);
 
-	expresion(foslet | CPAR_CIE | CLLA_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
+	expresion(folset | CPAR_CIE | CLLA_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
 							 CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR |
 							 CIF | CWHILE | CIN | COUT | CPYCOMA | CRETURN | CELSE);
 
 	match(CPAR_CIE, 21);
 
-	proposicion(CELSE | CLLA_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
+	proposicion(folset | CELSE | CLLA_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
 							 CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR |
-							 CIF | CWHILE | CIN | COUT | CPYCOMA | CRETURN | );
+							 CIF | CWHILE | CIN | COUT | CPYCOMA | CRETURN );
 
 	if(lookahead_in(CELSE))
 	{
@@ -441,7 +437,7 @@ void expresion(set folset)
 		{
 			case CASIGNAC:
 				scanner();
-				expresion_simple(folset);
+				expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG);
 				break;
 				
 			case CDISTINTO:
@@ -451,7 +447,7 @@ void expresion(set folset)
 			case CMAYOR:
 			case CMAIG:
 				scanner();
-				expresion_simple(folset);
+				expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG);
 				break;
 		}
 		test(CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | folset, NADA, 69);
@@ -465,13 +461,13 @@ void expresion_simple(set folset)
 	if(lookahead_in(CMAS | CMENOS))
 		scanner();
 
-	termino(folset | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR );
+	termino(folset | CMAS | CMENOS |COR);
 	test(CMAS | CMENOS | COR | folset, NADA, 65);
 	while(lookahead_in(CMAS | CMENOS | COR))
 	{
 		scanner();
 		termino(folset | CMAS | CMENOS | COR );
-		test(CMAS | CMENOS | COR |  folset, NADA, 65);
+		test(CMAS | CMENOS | COR |  folset , NADA, 65);
 	}
 }
 
@@ -479,7 +475,7 @@ void expresion_simple(set folset)
 void termino(set folset)
 {	
 	factor(folset | CMULT | CDIV | CAND | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPAR_ABR | CNEG);
-	test(CMULT | CDIV | CAND | folset,NADA, 65 );
+	test(CMULT | CDIV | CAND | folset ,NADA, 65 );
 	while(lookahead_in(CMULT | CDIV | CAND))
 	{
 		scanner();
@@ -515,7 +511,7 @@ void factor(set folset)
 			break;
 		
 		case CPAR_ABR:
-			scanner();
+			match(CPAR_ABR, 20);
 			expresion(folset | CPAR_CIE);
 			match(CPAR_CIE, 21);
 			break;
@@ -534,14 +530,14 @@ void factor(set folset)
 
 void variable(set folset)
 {
-	test(CIDENT, folset | CCOR_ABR | CCOR_CIE | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR, 59);
+	test(CIDENT, folset | CCOR_ABR | CCOR_CIE | CMAS | CMENOS | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR, 59);
 	match(CIDENT, 17);
 
 	/* El alumno debera verificar con una consulta a TS
 	si, siendo la variable un arreglo, corresponde o no
 	verificar la presencia del subindice */
 
-	if(lookahead_in(CCOR_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CCOR_CIE))
+	if(lookahead_in(CCOR_ABR))
 	{
 		match(CCOR_ABR, 35);
 		expresion(folset | CCOR_CIE);

@@ -63,7 +63,7 @@ void init_parser(int argc, char *argv[])
 void match(set codigo, int ne)
 {
     if(lookahead() & codigo){
-      //  printf("match: %s \n", lookaheadLexema());
+    	//printf("match: %s \n", lookaheadLexema());
 		scanner();
 	}
     else

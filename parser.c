@@ -30,7 +30,7 @@ void unidad_traduccion(set folset)
 
 void declaraciones(set folset)
 {	
-	especificador_tipo(folset | CIDENT | CPAR_ABR | CCOMA | CIGUAL | CPYCOMA);
+	especificador_tipo(folset | CIDENT | CPAR_ABR | CASIGNAC | CCOR_ABR | CCOMA | CPYCOMA);
 	
 	match(CIDENT, 17);
 	
@@ -68,7 +68,7 @@ void especificador_tipo(set folset)
 
 void especificador_declaracion(set folset)
 {	
-	test(CPAR_ABR | CASIGNAC | CCOR_ABR | CCOMA | CPYCOMA, folset, 43);
+	test(CPAR_ABR | CASIGNAC | CCOR_ABR | CCOMA | CPYCOMA, folset, 43);//TODO: se puede configurar
 	switch(lookahead())
 	{
 		case CPAR_ABR:
@@ -92,7 +92,7 @@ void definicion_funcion(set folset)
 {
 	match(CPAR_ABR, 20);
 
-	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
+	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT ))
 		lista_declaraciones_param(folset | CPAR_CIE | CLLA_ABR);
 
 	match(CPAR_CIE, 21);
@@ -103,12 +103,12 @@ void definicion_funcion(set folset)
 
 void lista_declaraciones_param(set folset)
 {
-	declaracion_parametro(folset | CCOMA);
+	declaracion_parametro(folset | CCOMA | CVOID | CCHAR | CINT | CFLOAT );
 	test(CCOMA | folset, CVOID | CCHAR | CINT | CFLOAT, 45);
 	while(lookahead_in(CCOMA | CVOID | CCHAR | CINT | CFLOAT))
 	{
 		match(CCOMA, 64);
-		declaracion_parametro(folset);
+		declaracion_parametro(folset | CCOMA | CVOID | CCHAR | CINT | CFLOAT);
 		test(CCOMA | folset,  CVOID | CCHAR | CINT | CFLOAT, 45);
 	}
 }
@@ -123,9 +123,9 @@ void declaracion_parametro(set folset)
 		
 	match(CIDENT, 17);
 
-	if(lookahead_in(CCOR_ABR))
+	if(lookahead_in(CCOR_ABR | CCOR_CIE))
 	{
-		scanner();
+		match(CCOR_ABR, 35);
 		match(CCOR_CIE, 22);
 	}
 }
@@ -133,10 +133,11 @@ void declaracion_parametro(set folset)
 
 void lista_declaraciones_init(set folset)
 {
-	test(CIDENT, folset | CCOMA | CIDENT | CASIGNAC | CCOR_ABR , 46);
+	test(CIDENT, folset | CASIGNAC | CCOR_ABR | CCOMA , 46);
 	match(CIDENT, 17);
 
 	declarador_init(folset | CCOMA | CIDENT | CASIGNAC | CCOR_ABR);
+	
 	test(CCOMA | folset, CIDENT | CASIGNAC | CCOR_ABR, 48);
 	while(lookahead_in(CCOMA | CIDENT | CASIGNAC | CCOR_ABR))
 	{
@@ -152,24 +153,26 @@ void declaracion_variable(set folset)
 {
 	declarador_init(folset | CCOMA | CIDENT | CPYCOMA );
 
-	if(lookahead_in(CCOMA))
+	if(lookahead_in(CCOMA | CIDENT))
 	{
-		scanner();
+		match(CCOMA,64);
 		lista_declaraciones_init(folset | CPYCOMA);
 	}
 
 	match(CPYCOMA, 23);
-	test(folset, NADA, 60);
+	test(folset, NADA, 51);
 }
 
 
 void declarador_init(set folset)
 {
-	test(CASIGNAC | CCOR_ABR | folset, CCOR_CIE, 47);
+	test(CASIGNAC | CCOR_ABR | CCOMA | CPYCOMA | folset, CCOR_CIE | CLLA_ABR | CLLA_CIE | CCONS_FLO | CCONS_CAR , 47);
 	switch(lookahead())
-	{
+	{	
+		case CCONS_FLO:
+		case CCONS_CAR:
 		case CASIGNAC:
-			scanner();
+			match(CASIGNAC, 66);
 			constante(folset);
 			break;
 
@@ -183,7 +186,7 @@ void declarador_init(set folset)
 
 			match(CCOR_CIE, 22);
 
-			if(lookahead_in(CASIGNAC | CLLA_ABR | CLLA_CIE))
+			if(lookahead_in(CASIGNAC | CLLA_ABR | CLLA_CIE | CCONS_ENT | CCONS_FLO | CCONS_CAR))
 			{
 				match(CASIGNAC, 66);
 				match(CLLA_ABR, 24);
@@ -198,19 +201,21 @@ void declarador_init(set folset)
 void lista_inicializadores(set folset)
 {
 	constante(folset | CCOMA | CCONS_ENT | CCONS_FLO | CCONS_CAR);
-	test(folset | CCOMA, CCONS_ENT | CCONS_FLO | CCONS_CAR, 63);
+	test(CCOMA | folset, CCONS_ENT | CCONS_FLO | CCONS_CAR, 63);
 	while(lookahead_in(CCOMA | CCONS_ENT | CCONS_FLO | CCONS_CAR))
 	{
 		match(CCOMA, 64);
 		constante(folset | CCOMA | CCONS_ENT | CCONS_FLO | CCONS_CAR);
-		test(folset | CCOMA, CCONS_ENT | CCONS_FLO | CCONS_CAR, 63);
+		test(CCOMA | folset , CCONS_ENT | CCONS_FLO | CCONS_CAR, 63);
 	}
 }
 
 
 void proposicion_compuesta(set folset)
 {
-	test(CLLA_ABR, folset , 49);
+	test(CLLA_ABR, folset | CVOID | CCHAR | CINT | CFLOAT  | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
+						 CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR |
+						 CIF | CWHILE | CIN | COUT | CPYCOMA | CRETURN | CLLA_CIE, 49);
 
 	match(CLLA_ABR, 24);
 
@@ -245,6 +250,7 @@ void declaracion(set folset)
 	lista_declaraciones_init(folset | CPYCOMA);
 
 	match(CPYCOMA, 23);
+
 	test(folset, NADA, 51);
 }
 
@@ -429,7 +435,7 @@ void proposicion_expresion(set folset)
 
 void expresion(set folset)
 {	
-	expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG);
+	expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
 	test(CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | folset, NADA, 69);
 	while(lookahead_in(CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG))
 	{
@@ -437,7 +443,7 @@ void expresion(set folset)
 		{
 			case CASIGNAC:
 				scanner();
-				expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG);
+				expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
 				break;
 				
 			case CDISTINTO:
@@ -447,7 +453,7 @@ void expresion(set folset)
 			case CMAYOR:
 			case CMAIG:
 				scanner();
-				expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG);
+				expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
 				break;
 		}
 		test(CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | folset, NADA, 69);
@@ -460,14 +466,24 @@ void expresion_simple(set folset)
 	test(CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR, folset | COR, 56);
 	if(lookahead_in(CMAS | CMENOS))
 		scanner();
-
-	termino(folset | CMAS | CMENOS |COR);
-	test(CMAS | CMENOS | COR | folset, NADA, 65);
-	while(lookahead_in(CMAS | CMENOS | COR))
+		
+	termino(folset | CMAS | CMENOS |COR | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
+	test(CMAS | CMENOS | COR | folset, CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR, 65);
+	while(lookahead_in(CMAS | CMENOS | COR | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR))
 	{
-		scanner();
-		termino(folset | CMAS | CMENOS | COR );
-		test(CMAS | CMENOS | COR |  folset , NADA, 65);
+		switch (lookahead())
+		{
+		case CMAS:
+		case CMENOS:
+		case COR:
+			scanner();
+			break;
+		default:
+			error_handler(65);
+			break;
+		}
+		termino(folset | CMAS | CMENOS | COR | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
+		test(CMAS | CMENOS | COR | folset, CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR, 65);
 	}
 }
 
@@ -475,11 +491,22 @@ void expresion_simple(set folset)
 void termino(set folset)
 {	
 	factor(folset | CMULT | CDIV | CAND | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPAR_ABR | CNEG);
-	test(CMULT | CDIV | CAND | folset ,NADA, 65 );
-	while(lookahead_in(CMULT | CDIV | CAND))
+	test(CMULT | CDIV | CAND | folset , CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPAR_ABR | CNEG , 65 );
+	while(lookahead_in(CMULT | CDIV | CAND | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPAR_ABR | CNEG))
 	{
-		scanner();
+		switch (lookahead())
+		{
+		case CMULT:
+		case CDIV:
+		case CAND:
+			scanner();
+			break;
+		default:
+			error_handler(65);
+			break;
+		}
 		factor(folset | CMULT | CDIV | CAND | CMULT | CDIV | CAND | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPAR_ABR | CNEG);
+		//factor hace test final
 	}
 }
 
@@ -565,9 +592,9 @@ void lista_expresiones(set folset)
 {
 	expresion(folset| CCOMA | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
 	//test(CCOMA | folset,NADA,??);
-	while(lookahead_in(CCOMA))
+	while(lookahead_in(CCOMA | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR))
 	{
-		scanner();
+		match(CCOMA,64);
 		expresion(folset| CCOMA | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
 		//test(CCOMA | folset,NADA,??);
 	}
@@ -576,7 +603,7 @@ void lista_expresiones(set folset)
 
 void constante(set folset)
 {
-	test(CCONS_ENT | CCONS_FLO | CCONS_CAR, NADA, 62);
+	test(CCONS_ENT | CCONS_FLO | CCONS_CAR, folset, 62);
 	switch(lookahead())
 	{
 		case CCONS_ENT:

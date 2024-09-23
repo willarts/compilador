@@ -92,6 +92,7 @@ void test(set conj1, set conj2, int ne) {
 		//error_handler(COD_IMP_ERRORES);
 		conj1 = conj1 | conj2;
 		while (!lookahead_in(conj1)) {
+			//printf("test:(%s) \n", lookaheadLexema());
 			scanner();
 		}
 	}

@@ -378,7 +378,7 @@ void proposicion_e_s(set folset)
 			while(lookahead_in(CSHR))
 			{
 				scanner();
-				variable(CSHR | CIDENT);
+				variable(folset |CSHR | CIDENT | CPYCOMA);
 			}
 
 			match(CPYCOMA, 23);
@@ -403,7 +403,7 @@ void proposicion_e_s(set folset)
 			break;
 		
 		default:
-			error_handler(26);
+			error_handler(29);
 	}
 	test(folset , NADA, 53);
 }

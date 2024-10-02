@@ -4,6 +4,7 @@
 #include "codigos.h"
 #include "util.h"
 #include "error.h"
+#include "ts.h"
 
 int last_call=0;
 
@@ -17,9 +18,9 @@ void definicion_funcion();
 void declaracion_variable();
 void lista_declaraciones_param();
 void declaracion_parametro();
-void declarador_init();
+int declarador_init();
 void lista_declaraciones_init();
-void lista_inicializadores();
+int lista_inicializadores();
 void lista_proposiciones();
 void lista_declaraciones();
 void declaracion();
@@ -37,4 +38,4 @@ void factor();
 void variable();
 void llamada_funcion();
 void lista_expresiones();
-void constante();
+char *  constante();

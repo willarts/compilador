@@ -76,7 +76,7 @@ set lookahead()
 	return sbol->codigo;
 }
 
-char * lookaheadLexema()
+char * lexema()
 {
 	return sbol->lexema;
 }

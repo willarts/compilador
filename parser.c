@@ -3,6 +3,8 @@
 int main(int argc, char *argv[])
 {
 	init_parser(argc, argv);
+
+	inic_tablas();
 	
 	unidad_traduccion(CEOF);
 
@@ -20,11 +22,15 @@ int main(int argc, char *argv[])
 
 void unidad_traduccion(set folset)
 {	
+
+	pushTB();
+	mostrar_tabla();
 	test(CVOID | CCHAR | CINT | CFLOAT | folset, NADA ,40);
 	while(lookahead_in(CVOID | CCHAR | CINT | CFLOAT)){
 		declaraciones(folset | CVOID | CCHAR | CINT | CFLOAT);
 		test(CVOID | CCHAR | CINT | CFLOAT | folset, NADA ,44);
 	}
+	pop_nivel();
 }
 
 
@@ -32,7 +38,9 @@ void declaraciones(set folset)
 {	
 	especificador_tipo(folset | CIDENT | CPAR_ABR | CASIGNAC | CCOR_ABR | CCOMA | CPYCOMA);
 	
+	strcpy(inf_id->nbre, lexema());
 	match(CIDENT, 17);
+	
 	
 	especificador_declaracion(folset);
 }
@@ -45,18 +53,22 @@ void especificador_tipo(set folset)
 	{
 		case CVOID:
 			scanner();
+			inf_id->ptr_tipo = en_tabla("void");
 			break;
 			
 		case CCHAR:
 			scanner();
+			inf_id->ptr_tipo = en_tabla("char");
 			break;
 			
 		case CINT:
 			scanner();
+			inf_id->ptr_tipo = en_tabla("int");
 			break;
 			
 		case CFLOAT:
 			scanner();
+			inf_id->ptr_tipo = en_tabla("float");
 			break;
 			
 		default:
@@ -92,12 +104,16 @@ void definicion_funcion(set folset)
 {
 	match(CPAR_ABR, 20);
 
+	pushTB();// abre bloque de funcion.
+	
 	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT ))
 		lista_declaraciones_param(folset | CPAR_CIE | CLLA_ABR);
 
 	match(CPAR_CIE, 21);
 
 	proposicion_compuesta(folset);
+
+	pop_nivel(); //cierra el nivel.
 }
 
 
@@ -131,19 +147,44 @@ void declaracion_parametro(set folset)
 }
 
 
-void lista_declaraciones_init(set folset)
+void lista_declaraciones_init(set folset, int stipo)
 {
 	test(CIDENT, folset | CASIGNAC | CCOR_ABR | CCOMA , 46);
+	
+	strcpy(inf_id->nbre, lexema());
 	match(CIDENT, 17);
 
-	declarador_init(folset | CCOMA | CIDENT | CASIGNAC | CCOR_ABR);
-	
+	int isArr =declarador_init(folset | CCOMA | CIDENT | CASIGNAC | CCOR_ABR);
+	if(!isArr){
+		inf_id->clase = CLASVAR;
+	}
+	else{
+		inf_id->clase = CLASVARSTRUCT;
+		inf_id->ptr_tipo = en_tabla("TIPOARREGLO");
+		inf_id->desc.part_var.arr.ptero_tipo_base = stipo;
+	}
+	inf_id->desc.nivel = get_nivel();
+	insertarTS();
+	mostrar_tabla();
+
 	test(CCOMA | folset, CIDENT | CASIGNAC | CCOR_ABR, 48);
 	while(lookahead_in(CCOMA | CIDENT | CASIGNAC | CCOR_ABR))
 	{
 		match(CCOMA, 64);
+		strcpy(inf_id->nbre, lexema());
 		match(CIDENT, 17);
-		declarador_init(folset | CCOMA | CIDENT | CASIGNAC | CCOR_ABR);
+		int isArr = declarador_init(folset | CCOMA | CIDENT | CASIGNAC | CCOR_ABR);
+		if(!isArr){
+			inf_id->clase = CLASVAR;
+		}
+		else{
+			inf_id->clase = CLASVARSTRUCT;
+			inf_id->ptr_tipo = en_tabla("TIPOARREGLO");
+			inf_id->desc.part_var.arr.ptero_tipo_base = stipo;
+		}
+		inf_id->desc.nivel = get_nivel();
+		insertarTS();
+		mostrar_tabla();
 		test(CCOMA | folset, CIDENT | CASIGNAC | CCOR_ABR, 48);
 	}
 }
@@ -151,12 +192,23 @@ void lista_declaraciones_init(set folset)
 
 void declaracion_variable(set folset)
 {
-	declarador_init(folset | CCOMA | CIDENT | CPYCOMA );
-
+	int stipo = inf_id->ptr_tipo;
+	int isArr = declarador_init(folset | CCOMA | CIDENT | CPYCOMA );
+	if(!isArr){
+		inf_id->clase = CLASVAR;
+	}
+	else {
+		inf_id->clase = CLASVARSTRUCT;
+		inf_id->ptr_tipo = en_tabla("TIPOARREGLO");
+		inf_id->desc.part_var.arr.ptero_tipo_base = stipo;
+	}
+	inf_id->desc.nivel = get_nivel();
+	insertarTS();
+	mostrar_tabla();
 	if(lookahead_in(CCOMA | CIDENT))
 	{
 		match(CCOMA,64);
-		lista_declaraciones_init(folset | CPYCOMA);
+		lista_declaraciones_init(folset | CPYCOMA, stipo);
 	}
 
 	match(CPYCOMA, 23);
@@ -164,8 +216,9 @@ void declaracion_variable(set folset)
 }
 
 
-void declarador_init(set folset)
+int declarador_init(set folset)
 {
+	int isArr=0;
 	test(CASIGNAC | CCOR_ABR | CCOMA | CPYCOMA | folset, CCOR_CIE | CLLA_ABR | CLLA_CIE | CCONS_FLO | CCONS_CAR , 47);
 	switch(lookahead())
 	{	
@@ -180,34 +233,49 @@ void declarador_init(set folset)
 		case CCOR_CIE:
 		case CLLA_ABR:
 		case CLLA_CIE:
-			 match(CCOR_ABR, 35);			
+			isArr=1;
+			 match(CCOR_ABR, 35);	
+			char dimension  [20];
 			if(lookahead_in(CCONS_ENT))
-				constante(folset | CCOR_CIE | CASIGNAC | CLLA_ABR | CCONS_ENT | CCONS_FLO | CCONS_CAR | CLLA_CIE);
-
+				 strcpy(dimension, constante(folset | CCOR_CIE | CASIGNAC | CLLA_ABR | CCONS_ENT | CCONS_FLO | CCONS_CAR | CLLA_CIE));
+			int entero = (int) strtol(dimension, NULL, 10);
+			
 			match(CCOR_CIE, 22);
-
+			int cant = 0;
 			if(lookahead_in(CASIGNAC | CLLA_ABR | CLLA_CIE | CCONS_ENT | CCONS_FLO | CCONS_CAR))
 			{
 				match(CASIGNAC, 66);
 				match(CLLA_ABR, 24);
-				lista_inicializadores(folset | CLLA_CIE);
+				cant = lista_inicializadores(folset | CLLA_CIE);
 				match(CLLA_CIE, 25);
+			}
+			if(entero > cant){
+				inf_id->desc.part_var.arr.cant_elem = entero;
+			}
+			else{
+				inf_id->desc.part_var.arr.cant_elem = cant;
 			}
 			break;
 	}
+
 	test(folset, NADA, 48);
+	return isArr;
 }
 
-void lista_inicializadores(set folset)
+int lista_inicializadores(set folset)
 {
+	int cantidad_cosntantes=0;
 	constante(folset | CCOMA | CCONS_ENT | CCONS_FLO | CCONS_CAR);
+	cantidad_cosntantes++;
 	test(CCOMA | folset, CCONS_ENT | CCONS_FLO | CCONS_CAR, 63);
 	while(lookahead_in(CCOMA | CCONS_ENT | CCONS_FLO | CCONS_CAR))
 	{
 		match(CCOMA, 64);
 		constante(folset | CCOMA | CCONS_ENT | CCONS_FLO | CCONS_CAR);
+		cantidad_cosntantes++;
 		test(CCOMA | folset , CCONS_ENT | CCONS_FLO | CCONS_CAR, 63);
 	}
+	return cantidad_cosntantes;
 }
 
 
@@ -247,7 +315,7 @@ void declaracion(set folset)
 {
 	especificador_tipo(folset | CIDENT | CPYCOMA);
 
-	lista_declaraciones_init(folset | CPYCOMA);
+	lista_declaraciones_init(folset | CPYCOMA, inf_id->ptr_tipo);
 
 	match(CPYCOMA, 23);
 
@@ -335,8 +403,12 @@ void proposicion_iteracion(set folset)
 							 CIF | CWHILE | CIN | COUT | CPYCOMA | CRETURN );
 
 	match(CPAR_CIE, 21);
+	
+	pushTB();// abre el bloque de while
 
 	proposicion(folset);
+
+	pop_nivel();// cierra el bloque del While
 }
 
 
@@ -352,15 +424,22 @@ void proposicion_seleccion(set folset)
 
 	match(CPAR_CIE, 21);
 
+	pushTB();// abre bloque de if
+	
 	proposicion(folset | CELSE | CLLA_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
 							 CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR |
 							 CIF | CWHILE | CIN | COUT | CPYCOMA | CRETURN );
 
+	pop_nivel(); // Cierra el bloque del if
 	if(lookahead_in(CELSE))
 	{
 		scanner();
+		pushTB(); // TODO PReguntar si es asi 
 		proposicion(folset);
+		pop_nivel(); 
 	}
+
+	
 }
 
 
@@ -601,11 +680,16 @@ void lista_expresiones(set folset)
 }
 
 
-void constante(set folset)
+char * constante(set folset)
 {
+	char res[10];
+	
+	
 	test(CCONS_ENT | CCONS_FLO | CCONS_CAR, folset, 62);
+	char *re = (char *) calloc(20, sizeof(char));
+	strcpy(re, lexema());
 	switch(lookahead())
-	{
+	{ 
 		case CCONS_ENT:
 			scanner();
 			break;
@@ -622,4 +706,7 @@ void constante(set folset)
 			error_handler(33);
 	}
 	test(folset, NADA, 63);
+	//re= res;
+	
+	return re;
 }

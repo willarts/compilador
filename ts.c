@@ -1,10 +1,10 @@
 /* 
 ======================================================================
-						DISEÑO Y CONSTRUCCIÓN DE COMPILADORES
+						DISEï¿½O Y CONSTRUCCIï¿½N DE COMPILADORES
 
-					PROGRAMAS FUENTES ENTREGADOS POR LA CÁTEDRA
+					PROGRAMAS FUENTES ENTREGADOS POR LA Cï¿½TEDRA
 
-						ADMINISTRADOR DE TABLA DE SÍMBOLOS
+						ADMINISTRADOR DE TABLA DE Sï¿½MBOLOS
 ======================================================================
 */
 
@@ -20,7 +20,7 @@
 #include "error.h"
 #include "ts.h"
 
-// ============ FUNCIÓN DE INICIALIZACIÓN DE TABLAS =================
+// ============ FUNCIï¿½N DE INICIALIZACIï¿½N DE TABLAS =================
 
 void inic_tablas()
 {
@@ -30,7 +30,7 @@ void inic_tablas()
 
 	//  TODOS LOS TOPES ESTAN INICIALIZADOS EN LA DECLARACION
 
-	for(i=0; i<TAM_TS; i++) {		// inicializo Tabla de Símbolos
+	for(i=0; i<TAM_TS; i++) {		// inicializo Tabla de Sï¿½mbolos
 		ts[i].ptr_sinon = NIL;
 		ts[i].ets = NULL;
 	}
@@ -127,11 +127,11 @@ void pushTB() {						// asumo que apunto al 1er ident del nuevo bloque
 }
 
 
-void pop_nivel() {					// El bloque a eliminar está al tope de TS y TB
+void pop_nivel() {					// El bloque a eliminar estï¿½ al tope de TS y TB
 	int h;
 	while(topeTS >= tb[topeTB]) {
 		h = hash(ts[topeTS].ets->nbre);
-		th[h] = ts[topeTS].ptr_sinon;  	// modifico la TH según los sinónimos
+		th[h] = ts[topeTS].ptr_sinon;  	// modifico la TH segï¿½n los sinï¿½nimos
 		popTS();        						// elimino un identificador del bloque que abandono
 	}
 	popTB();      								// elimino el bloque que abandono
@@ -143,9 +143,10 @@ int get_nivel() {
 }
 
 
-// ================ FUNCIONES DE LA TABLA DE SÍMBOLOS ===============
+// ================ FUNCIONES DE LA TABLA DE Sï¿½MBOLOS ===============
 
-int insertarTS() {					// la inf. del identif. está en inf_id que es global
+int insertarTS() {		
+	calcularTam();			// la inf. del identif. estï¿½ en inf_id que es global
 	int i, h;
 	h = hash(inf_id->nbre);
 	if(th[h] != NIL)
@@ -158,7 +159,7 @@ int insertarTS() {					// la inf. del identif. está en inf_id que es global
 	// inserto un nuevo identificador
 	th[h] = pushTS(th[h], inf_id);
 
-	// pido más memoria para el nuevo identificador
+	// pido mï¿½s memoria para el nuevo identificador
 	inf_id = NULL;
 	inf_id = (entrada_TS *) calloc(1, sizeof(entrada_TS));
 	if(inf_id == NULL) {
@@ -169,8 +170,8 @@ int insertarTS() {					// la inf. del identif. está en inf_id que es global
 }
 
 
-int en_tabla(char *st) {			//busca un identificador en tabla de símbolos,
-	int h;								//retorna su posición o NIL (si no lo encuentra)
+int en_tabla(char *st) {			//busca un identificador en tabla de sï¿½mbolos,
+	int h;								//retorna su posiciï¿½n o NIL (si no lo encuentra)
 	h = th[hash(st)];
 	while(h != NIL) {
 		if(strcmp(ts[h].ets->nbre, st) == 0)
@@ -181,7 +182,7 @@ int en_tabla(char *st) {			//busca un identificador en tabla de símbolos,
 }
 
 
-int Tipo_Ident(char *st) {			//busca un identificador en tabla de símbolos,
+int Tipo_Ident(char *st) {			//busca un identificador en tabla de sï¿½mbolos,
 	int h;                     	//retorna su tipo o NIL (si no lo encuentra)
 	h = th[hash(st)];
 	while(h != NIL) {
@@ -193,7 +194,7 @@ int Tipo_Ident(char *st) {			//busca un identificador en tabla de símbolos,
 }
 
 
-int Clase_Ident(char *st) {		//busca un identificador en tabla de símbolos,
+int Clase_Ident(char *st) {		//busca un identificador en tabla de sï¿½mbolos,
 	int h;								//retorna su clase o NIL (si no lo encuentra)
 	h = th[hash(st)];
 	while(h != NIL) {
@@ -206,11 +207,11 @@ int Clase_Ident(char *st) {		//busca un identificador en tabla de símbolos,
 
 
 int en_nivel_actual(char *id) {	//busca un identificador en el bloque actual
-	int h;                  		//retorna su posición o NIL (si no lo encuentra)
+	int h;                  		//retorna su posiciï¿½n o NIL (si no lo encuentra)
 	h = th[hash(id)];
 	while(h >= tb[topeTB]) {		// busco el identificador dentro del bloque
 		if(!strcmp(ts[h].ets->nbre, id))
-			return h;     				// lo encontro, devuelvo la posición h
+			return h;     				// lo encontro, devuelvo la posiciï¿½n h
 		h = ts[h].ptr_sinon;
 	}
 	return NIL;          			// NO lo encontro ==> ident no declarado
@@ -241,5 +242,86 @@ int pushTS(int s, entrada_TS *ptr) {
 		ts[topeTS].ptr_sinon = s;
 		ts[topeTS].ets = ptr;
 	}
-	return topeTS;   					// retorno la posición donde insertó
+	return topeTS;   					// retorno la posiciï¿½n donde insertï¿½
+}
+
+void mostrar_tabla() {
+
+    printf("Tabla de Simbolos:\n");
+    printf("-------------------------------------------------------------\n");
+    printf("| Posicion | Nombre     | Clase  | Tipo  | Bytes | Descripcion\n");
+    printf("-------------------------------------------------------------\n");
+
+    for (int i = topeTS; i >= 0 ; i--) {
+        if (ts[i].ets != NULL) {
+            entrada_TS *entrada = ts[i].ets;
+            printf("| %8d | %-10s | %6d | %5d | %5d | ", i, entrada->nbre, entrada->clase, entrada->ptr_tipo, entrada->cant_byte);
+
+            // Mostrar detalles adicionales segÃºn la clase del identificador
+            switch (entrada->clase) {
+                case CLASTYPE:
+                    printf("Tipo\n");
+                    break;
+                case CLASVAR:
+                    printf("Variable (Nivel: %d, Desplazamiento: %d)\n", entrada->desc.nivel, entrada->desc.despl);
+                    break;
+                case CLASFUNC:
+                    printf("Funcion (Dir. Codigo: %d, Cant. Parametros: %d)\n", entrada->desc.part_var.sub.dir_cod, entrada->desc.part_var.sub.cant_par);
+                    break;
+                case CLASPAR:
+                    printf("Parametro (Tipo de Pasaje: %c)\n", entrada->desc.part_var.param.tipo_pje);
+                    break;
+				case CLASVARSTRUCT:
+                    printf("Arreglo (tipo base: %d, cantidad elementos:%d )\n", entrada->desc.part_var.arr.ptero_tipo_base, entrada->desc.part_var.arr.cant_elem);
+                    break;
+                default:
+                    printf("Desconocido\n");
+                    break;
+            }
+        }
+    }
+
+    printf("-------------------------------------------------------------\n");
+}
+
+void calcularTam() {
+	int tam, tipo , control = 0;
+
+	if (inf_id->clase == CLASVARSTRUCT && inf_id->ptr_tipo == TARREGLO) {
+		tipo = inf_id->desc.part_var.arr.ptero_tipo_base;
+		control++;
+	}
+	else{
+		tipo = inf_id->ptr_tipo;
+	}
+
+	switch (tipo)
+	{
+		case TCHAR:
+			tam = 1;
+			break;
+		case TINT:
+			tam = sizeof(int);
+			break;
+		case TFLOAT:
+			tam = sizeof(float);
+			break;
+		default:
+			tam = 0;
+			break;
+	}
+
+	if ((inf_id->clase == CLASVAR || inf_id->clase == CLASPAR) && inf_id->ptr_tipo == TVOID) {
+		error_handler(73);
+	}
+
+	if (control == 1) {
+		tam = (inf_id->desc.part_var.arr.cant_elem) * tam;
+	}
+	inf_id->cant_byte = tam;
+
+	/*if (clase == CLASPAR) {
+		tam = 4; // 4 bytes
+	}*/
+
 }

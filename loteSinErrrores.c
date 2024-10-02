@@ -1,6 +1,6 @@
 # declaraciones #
-int a;
-char b = 'c';
+int a, g, gd[2] = {1,2,5,6,7,8,9,0};
+void b = 'c';
 float arr[10] = {1.0, 2.0, 3.5};
 
 # Definición de funciones simples y con parámetros #
@@ -16,6 +16,7 @@ float fmulti(float &a, float b[]) {
     float result = 0;
     int i = 0;
     while (i < 10) {
+        int nivel2= 8 , d,c,ds;
         result = result + a * b[i];
         i = i + 1;
     }

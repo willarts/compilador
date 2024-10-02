@@ -10,4 +10,4 @@ void match(set, int);
 set lookahead();
 set lookahead_in(set);
 void test(set, set, int);
-char * lookaheadLexema();
+char * lexema();

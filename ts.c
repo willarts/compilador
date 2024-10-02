@@ -320,8 +320,4 @@ void calcularTam() {
 	}
 	inf_id->cant_byte = tam;
 
-	/*if (clase == CLASPAR) {
-		tam = 4; // 4 bytes
-	}*/
-
 }

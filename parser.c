@@ -157,6 +157,7 @@ void lista_declaraciones_init(set folset, int stipo)
 	int isArr =declarador_init(folset | CCOMA | CIDENT | CASIGNAC | CCOR_ABR);
 	if(!isArr){
 		inf_id->clase = CLASVAR;
+		inf_id->ptr_tipo = stipo;
 	}
 	else{
 		inf_id->clase = CLASVARSTRUCT;
@@ -176,6 +177,7 @@ void lista_declaraciones_init(set folset, int stipo)
 		int isArr = declarador_init(folset | CCOMA | CIDENT | CASIGNAC | CCOR_ABR);
 		if(!isArr){
 			inf_id->clase = CLASVAR;
+			inf_id->ptr_tipo = stipo;
 		}
 		else{
 			inf_id->clase = CLASVARSTRUCT;

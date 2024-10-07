@@ -139,6 +139,14 @@ int       tb[TAM_BLOQ];   // Tabla de Bloques
 int  topeTS;
 int  topeTB;
 
+
+typedef struct {
+	int tipo;
+    int tipo_base;
+	char *literalEntero;
+	int variable;
+	int is_return;
+} atributos_sintetizados;
 /* 
 =====================================================================
 		Funciones para la administraci�n de la Tabla de S�mbolos 
@@ -164,3 +172,4 @@ void pop_nivel();
 int get_nivel();
 void mostrar_tabla();
 void calcularTam();
+tipo_inf_res * crearNodo();

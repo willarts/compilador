@@ -112,6 +112,13 @@ void error_print(int ne)
 		case 98: printf("\t Error %d: Si el parametro formal es un arreglo, en el parametro real solo debe haber un identificador\n", ne); break;		
 		case 99: printf("\t Error %d: El identificador debe ser una funcion o un procedimiento\n", ne); break;														
 		case 100:printf("\t Error %d: El identificador debe ser una variable o parametro\n", ne); break;
+		//TODO errores agregados
+		case 101: printf("\t Error %d:La variable es de tipo arreglo, corresponde que lleve subindice\n", ne); break;
+		case 102: printf("\t Error %d: La lista de inicializadores del arreglo no puede estar vacia\n", ne); break;	
+		case 103: printf("\t Error %d: Los tipos de ambos lados de la operacion deben concidir\n", ne); break;
+		case 104: printf("\t Error %d: La asignacion produce perdida de informacion\n", ne); break;
+		case 105: printf("\t Error %d: Main no puede ser utilizado como identificador de variable\n", ne); break;
+		case 106: printf("\t Error %d: Main no puede ser declarado 2 veces\n", ne); break;
 	}
 }
 

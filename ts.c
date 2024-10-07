@@ -166,6 +166,7 @@ int insertarTS() {
 		error_handler(12);
 		exit(1);
 	}
+	mostrar_tabla();
 	return th[h];  					// retorno el lugar en TS donde se inserto
 }
 
@@ -290,9 +291,14 @@ void calcularTam() {
 	if (inf_id->clase == CLASVARSTRUCT && inf_id->ptr_tipo == TARREGLO) {
 		tipo = inf_id->desc.part_var.arr.ptero_tipo_base;
 		control++;
-	}
-	else{
-		tipo = inf_id->ptr_tipo;
+	}else {
+		if (inf_id->clase == CLASPAR && inf_id->ptr_tipo == TARREGLO) {
+			tipo = inf_id->desc.part_var.param.ptero_tipo_base;
+			control++;
+		}	
+		else{
+			tipo = inf_id->ptr_tipo;
+		}
 	}
 
 	switch (tipo)
@@ -311,7 +317,7 @@ void calcularTam() {
 			break;
 	}
 
-	if ((inf_id->clase == CLASVAR || inf_id->clase == CLASPAR) && inf_id->ptr_tipo == TVOID) {
+	if ((inf_id->clase == CLASVAR || inf_id->clase == CLASPAR ||  inf_id->clase == CLASVARSTRUCT ) && tipo == TVOID) {
 		error_handler(73);
 	}
 
@@ -320,4 +326,11 @@ void calcularTam() {
 	}
 	inf_id->cant_byte = tam;
 
+}
+tipo_inf_res * crearNodo(){
+	tipo_inf_res *inf_res = (tipo_inf_res *) calloc(1, sizeof(tipo_inf_res));;
+	inf_res->ptero_tipo = inf_id->ptr_tipo;					
+	inf_res->tipo_pje = inf_id->desc.part_var.param.tipo_pje;						
+	inf_res->ptero_tipo_base = inf_id->desc.part_var.param.ptero_tipo_base;
+	return inf_res;
 }

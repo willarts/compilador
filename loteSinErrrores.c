@@ -1,6 +1,6 @@
 # declaraciones #
 int a, g, gd[2] = {1,2,5,6,7,8,9,0};
-void b = 'c';
+char b = 'c';
 float arr[10] = {1.0, 2.0, 3.5};
 
 # Definición de funciones simples y con parámetros #
@@ -69,4 +69,10 @@ void testFunc() {
     cout << "Multiplication result: " << result << endl;
 }
 
-
+void test() {
+    hjjnjh
+    if(i>3) 
+        if(i>3){
+            int nivel2;
+        }
+}

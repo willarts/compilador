@@ -166,7 +166,7 @@ int insertarTS() {
 		error_handler(12);
 		exit(1);
 	}
-	mostrar_tabla();
+	//mostrar_tabla();
 	return th[h];  					// retorno el lugar en TS donde se inserto
 }
 

@@ -156,7 +156,7 @@ void lista_declaraciones_param(set folset, stc_TS * desc)
 		test(CCOMA | folset,  CVOID | CCHAR | CINT | CFLOAT, 45);
 	}
 	desc->part_var.sub.cant_par = cantParam;
-	mostrarLista(desc);
+	//mostrarLista(desc);
 }
 
 void declaracion_parametro(set folset)
@@ -363,8 +363,10 @@ void proposicion_compuesta(set folset, int isFuncion, int tipoFuncion)
 						 CIF | CWHILE | CIN | COUT | CPYCOMA | CRETURN))
 		lista_proposiciones(folset | CLLA_CIE, tipoFuncion);
 	else{
-		if(tipoFuncion != TVOID )
+		if(tipoFuncion != TVOID ){
 			error_handler(88);
+			//mostrar_tabla();
+		}
 	}
 	match(CLLA_CIE, 25);
 	if (!isFuncion) pop_nivel(); // si es una función le da la baja al nivel en el procedimiento definicion de funcion
@@ -418,6 +420,7 @@ void lista_proposiciones(set folset, int tipoFuncion)
 	if(tipoFuncion == TINT || tipoFuncion == TCHAR || tipoFuncion == TFLOAT){
 		if(asP.is_return != 1)
 			error_handler(88);
+			
 		else if(tipoFuncion != asP.tipo)
 			error_handler(87);
 	} else if(asP.is_return == 1)
@@ -433,7 +436,7 @@ atributos_sintetizados proposicion(set folset)
 	switch(lookahead())
 	{
 		case CLLA_ABR:
-			proposicion_compuesta(folset, 0 , NIL);
+			proposicion_compuesta(folset, 0 , 0);
 			break;
 		
 		case CWHILE:

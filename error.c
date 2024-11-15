@@ -125,6 +125,7 @@ void error_print(int ne)
 
 void error_handler(int ne)
 {	
+//GEN = 0;
 int i;
 hubo_error++;
 if(last_call){

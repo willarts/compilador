@@ -1,5 +1,6 @@
 #include "parser.h"
 int mainDeclarado = 0;
+int GEN = 1;
 int main(int argc, char *argv[])
 {
 	init_parser(argc, argv);
@@ -22,8 +23,17 @@ int main(int argc, char *argv[])
 
 void unidad_traduccion(set folset)
 {	
+	if(GEN)
+		CODE[lcode++] = INPP;
 
 	pushTB();
+	if(GEN){
+		CODE[lcode++] = ENBL;
+		CODE[lcode++] = get_nivel();
+	}
+	desplazamiento = 0;
+	
+
 	test(CVOID | CCHAR | CINT | CFLOAT | folset, NADA ,40);
 	while(lookahead_in(CVOID | CCHAR | CINT | CFLOAT)){
 		declaraciones(folset | CVOID | CCHAR | CINT | CFLOAT);
@@ -31,7 +41,19 @@ void unidad_traduccion(set folset)
 	}
 	if(en_tabla("main") == NIL)
 		error_handler(84);
+	if(GEN){
+		CODE[lcode++] = FINB;
+		CODE[lcode++] = get_nivel();
+	}
+
 	pop_nivel();
+
+		
+	if (GEN) {
+		CODE[lcode++] = PARAR;
+		impr_codgen2();
+	}
+	
 }
 
 
@@ -122,6 +144,11 @@ void definicion_funcion(set folset)
 	match(CPAR_ABR, 20);
 
 	pushTB();// abre bloque de funcion.
+	if(GEN){
+		CODE[lcode++] = ENBL;
+		CODE[lcode++] = get_nivel();
+	}
+	desplazamiento = 0;
 	
 	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT )){		
 		if(strcmp(nombreFuncion,"main") == 0)
@@ -132,7 +159,10 @@ void definicion_funcion(set folset)
 
 	//int isFuncion = 1;
 	proposicion_compuesta(folset, 1, tipoFuncion); 
-
+	if(GEN){
+		CODE[lcode++] = FINB;
+		CODE[lcode++] = get_nivel();
+	}
 	pop_nivel(); //cierra el nivel.
 }
 
@@ -204,6 +234,14 @@ void lista_declaraciones_init(set folset, int stipo)
 	if(!isArr){
 		inf_id->clase = CLASVAR;
 		inf_id->ptr_tipo = stipo;
+		int tamVar= tamTipo(stipo);
+		if(GEN){
+			CODE[lcode++] = ALOC;
+			CODE[lcode++] = tamVar;
+		}
+		inf_id->desc.despl = desplazamiento;	
+		desplazamiento += tamVar;
+
 	}
 	else{
 		inf_id->clase = CLASVARSTRUCT;
@@ -224,6 +262,14 @@ void lista_declaraciones_init(set folset, int stipo)
 		if(!isArr){
 			inf_id->clase = CLASVAR;
 			inf_id->ptr_tipo = stipo;
+
+			int tamVar= tamTipo(stipo);
+			if(GEN){
+				CODE[lcode++] = ALOC;
+				CODE[lcode++] = tamVar;
+			}
+			inf_id->desc.despl = desplazamiento;	
+			desplazamiento += tamVar;
 		}
 		else{
 			inf_id->clase = CLASVARSTRUCT;
@@ -243,6 +289,13 @@ void declaracion_variable(set folset)
 	int isArr = declarador_init(folset | CCOMA | CIDENT | CPYCOMA , stipo);
 	if(!isArr){
 		inf_id->clase = CLASVAR;
+		int tamVar= tamTipo(stipo);
+		if(GEN){
+			CODE[lcode++] = ALOC;
+			CODE[lcode++] = tamVar;
+		}
+		inf_id->desc.despl = desplazamiento;	
+		desplazamiento += tamVar;
 	}
 	else {
 		inf_id->clase = CLASVARSTRUCT;
@@ -250,6 +303,8 @@ void declaracion_variable(set folset)
 		inf_id->desc.part_var.arr.ptero_tipo_base = stipo;
 	}
 	inf_id->desc.nivel = get_nivel();
+
+
 	insertarTS();
 	if(lookahead_in(CCOMA | CIDENT))
 	{
@@ -351,7 +406,14 @@ void proposicion_compuesta(set folset, int isFuncion, int tipoFuncion)
 
 	match(CLLA_ABR, 24);
 
-	if (!isFuncion) pushTB(); // si es una función ya creo el nivel
+	if (!isFuncion) {
+		pushTB();
+		if(GEN){
+			CODE[lcode++] = ENBL;
+			CODE[lcode++] = get_nivel();
+			desplazamiento = 0;
+		}
+	} // si es una función ya creo el nivel
 	
 	if(lookahead_in(CVOID | CCHAR | CINT | CFLOAT))
 		lista_declaraciones(folset | CLLA_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
@@ -369,7 +431,13 @@ void proposicion_compuesta(set folset, int isFuncion, int tipoFuncion)
 		}
 	}
 	match(CLLA_CIE, 25);
-	if (!isFuncion) pop_nivel(); // si es una función le da la baja al nivel en el procedimiento definicion de funcion
+	if (!isFuncion) { 
+		if(GEN){
+			CODE[lcode++] = FINB;
+			CODE[lcode++] = get_nivel();
+		}
+		pop_nivel(); // si es una función le da la baja al nivel en el procedimiento definicion de funcion
+	}
 	test(folset, NADA, 50);
 }
 
@@ -478,18 +546,32 @@ atributos_sintetizados proposicion(set folset)
 
 void proposicion_iteracion(set folset)
 {
+	atributos_sintetizados asE;
 	match(CWHILE, 27);
 
 	match(CPAR_ABR, 20);
 
-	expresion(folset | CPAR_CIE | CLLA_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
+	int labelExp = lcode;
+	
+	asE = expresion(folset | CPAR_CIE | CLLA_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
 							 CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR |
 							 CIF | CWHILE | CIN | COUT | CPYCOMA | CRETURN );
-
 	match(CPAR_CIE, 21);
+	if(GEN){
+		CODE[lcode++] = BIFF;
+		CODE[lcode++] = asE.tipo;
+	}
+	int salidaWhile = lcode;
+	lcode++;
+	
 	
 	proposicion(folset);
 
+	if(GEN){
+		CODE[lcode++] = BIFS;
+		CODE[lcode++] = labelExp;
+		CODE[salidaWhile]= lcode;
+	}
 }
 
 
@@ -528,19 +610,40 @@ void proposicion_e_s(set folset)
 			scanner();
 			
 			match(CSHR, 30);
-			
+			int posEnTabla;
+			if(GEN)
+			  posEnTabla = en_tabla(lexema());
 			atributos_sintetizados asE = variable(folset | CSHR | CIDENT | CPYCOMA, NULL);			
 			int tipoE = asE.tipo != TARREGLO? asE.tipo : asE.tipo_base;
+
 			if(tipoE == TERROR || tipoE == TVOID)
 				error_handler(95);
-
+			if(GEN){
+				CODE[lcode++] = LEER;
+				CODE[lcode++] = tipoE -1;
+				CODE[lcode++] = ALM;
+				CODE[lcode++] = ts[posEnTabla].ets->desc.nivel;
+				CODE[lcode++] = ts[posEnTabla].ets->desc.despl;
+				CODE[lcode++] = tipoE -1;
+			}
+			
 			while(lookahead_in(CSHR))
 			{
 				scanner();
+				if(GEN)
+			 		posEnTabla = en_tabla(lexema());
 				asE = variable(folset |CSHR | CIDENT | CPYCOMA, NULL);
 				tipoE = asE.tipo != TARREGLO? asE.tipo : asE.tipo_base;
 				if(tipoE == TERROR || tipoE == TVOID)
 					error_handler(95);
+							if(GEN){
+				CODE[lcode++] = LEER;
+				CODE[lcode++] = tipoE -1;
+				CODE[lcode++] = ALM;
+				CODE[lcode++] = ts[posEnTabla].ets->desc.nivel;
+				CODE[lcode++] = ts[posEnTabla].ets->desc.despl;
+				CODE[lcode++] = tipoE -1;
+			}
 			}
 
 			match(CPYCOMA, 23);
@@ -551,22 +654,75 @@ void proposicion_e_s(set folset)
 			scanner();
 
 			match(CSHL, 31);
+			int stringFlag = 0;
+			if (GEN){
+				if (lookahead() == CCONS_STR){
+					stringFlag = 1;
+					strcpy(CSAUX, lexema());
+				}
+			}
 			
 			asE = expresion(folset | CSHL | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPYCOMA);
 			tipoE = asE.tipo != TARREGLO? asE.tipo : asE.tipo_base;
 			if(tipoE == TERROR || tipoE == TVOID)
 				error_handler(95);
+
+			if(GEN){
+				if(stringFlag){
+					CODE[lcode++] = CRCTS;									
+					CODE[lcode++] = lcs;
+					for (int i = 0; CSAUX[i] != '\0'; i++){								
+						CS[lcs]= CSAUX[i];
+						lcs++;
+					}
+					CODE[lcode++] = IMPRCS;	
+					stringFlag = 0;
+				}
+				else{
+					CODE[lcode++] = IMPR;									
+					CODE[lcode++] = tipoE - 1;
+				}
+				
+			}
+			
 			while(lookahead_in(CSHL))
 			{
 				scanner();
+
+				if (GEN){
+					if (lookahead() == CCONS_STR){
+						stringFlag = 1;
+						strcpy(CSAUX, lexema());
+					}
+				}
+					
+
 				asE = expresion(CSHL |CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPYCOMA);
 				tipoE = asE.tipo != TARREGLO? asE.tipo : asE.tipo_base;
 				if(tipoE == TERROR || tipoE == TVOID)
 					error_handler(95);
+				
+				if(GEN){
+					if(stringFlag){
+						CODE[lcode++] = CRCTS;									
+						CODE[lcode++] = lcs;
+						for (int i = 0; CSAUX[i] != '\0'; i++){								
+							CS[lcs]= CSAUX[i];
+							lcs++;
+						}
+						CODE[lcode++] = IMPRCS;	
+						stringFlag = 0;
+					}
+					else{
+						CODE[lcode++] = IMPR;									
+						CODE[lcode++] = tipoE - 1;
+					}
+					
+				}
+
 			}
 
 			match(CPYCOMA, 23);
-			
 			break;
 		
 		default:
@@ -603,9 +759,11 @@ void proposicion_expresion(set folset)
 
 atributos_sintetizados expresion(set folset)
 {
+	char  miLexema[10];
+	strcpy(miLexema, lexema());
 	atributos_sintetizados asE1 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR), asEN;
 	asEN = asE1;
-	int error = 0, esAsign = 0;
+	int error = 0, esAsign = 0,op = 0;
 	test(CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | folset, NADA, 69);
 	while(lookahead_in(CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG))
 	{
@@ -628,6 +786,7 @@ atributos_sintetizados expresion(set folset)
 			case CMEIG:
 			case CMAYOR:
 			case CMAIG:
+				op = lookahead();
 				scanner();
 				asE2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
 				int tipoE2 = asE2.tipo != TARREGLO? asE2.tipo : asE2.tipo_base;
@@ -638,6 +797,31 @@ atributos_sintetizados expresion(set folset)
 					error_handler(96);
 				}else{
 					asEN.tipo =  tipoE2 > tipoEN? tipoE2 : tipoEN;
+				}
+				if(GEN){
+					switch (op){
+						case CDISTINTO:
+							CODE[lcode++] = CMIG;
+							CODE[lcode++] = NEG;
+							break;
+						case CIGUAL:
+							CODE[lcode++] = CMIG;
+							break;
+							
+						case CMENOR:
+							CODE[lcode++] = CMME;
+							break;
+						case CMEIG:
+							CODE[lcode++] = CMNI;
+						break;
+						case CMAYOR:
+							CODE[lcode++] = CMMA;
+						break;
+						case CMAIG:
+							CODE[lcode++] = CMAI;
+						break;					
+					}			
+					CODE[lcode++] = asEN.tipo -1;
 				}
 				break;
 		}
@@ -654,6 +838,13 @@ atributos_sintetizados expresion(set folset)
 			error_handler(104);
 			asEN.tipo = TERROR;
 		}
+		if(GEN && esAsign){
+			int pos = en_tabla(miLexema);
+			CODE[lcode++] = ALM;
+			CODE[lcode++] = ts[pos].ets->desc.nivel;
+			CODE[lcode++] = ts[pos].ets->desc.despl;
+			CODE[lcode++] = tipoE1 - 1;
+		}
 	return asEN;
 }
 
@@ -664,7 +855,7 @@ atributos_sintetizados expresion_simple(set folset)
 	if(lookahead_in(CMAS | CMENOS))
 		scanner();
 		
-	atributos_sintetizados asT1 = termino(folset | CMAS | CMENOS |COR | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
+	atributos_sintetizados asT1 = termino(folset | CMAS | CMENOS |COR | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR, -1);
 	int tipoT1 = asT1.tipo != TARREGLO? asT1.tipo : asT1.tipo_base;
 	test(CMAS | CMENOS | COR | folset, CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR, 65);
 	while(lookahead_in(CMAS | CMENOS | COR | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR))
@@ -682,7 +873,7 @@ atributos_sintetizados expresion_simple(set folset)
 			error_handler(65);
 			break;
 		}
-		atributos_sintetizados asT2 = termino(folset | CMAS | CMENOS | COR | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
+		atributos_sintetizados asT2 = termino(folset | CMAS | CMENOS | COR | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR, tipoT1);
 		int tipoT2 = asT2.tipo != TARREGLO? asT2.tipo : asT2.tipo_base;
 		if((tipoT1 == TVOID || tipoT1 == TERROR || tipoT2 == TVOID || tipoT2 == TERROR )&&(op == COR)) {
 			tipoT1 = TERROR;
@@ -691,6 +882,21 @@ atributos_sintetizados expresion_simple(set folset)
 		else{
 			tipoT1 = tipoT2 > tipoT1? tipoT2 : tipoT1;
 		}
+		if(GEN){
+			switch (op){
+				case CMAS:
+					CODE[lcode++] = SUM;
+					break;
+				case CMENOS:
+					CODE[lcode++] = SUB;
+					break;
+					
+				case COR:
+					CODE[lcode++] = OR;
+					break;
+			}			
+			CODE[lcode++] = tipoT1 -1;
+		}
 		test(CMAS | CMENOS | COR | folset, CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR, 65);
 	}
 	asT1.tipo = tipoT1;
@@ -698,9 +904,9 @@ atributos_sintetizados expresion_simple(set folset)
 }
 
 
-atributos_sintetizados termino(set folset)
+atributos_sintetizados termino(set folset, int tipoh)
 {	
-	atributos_sintetizados as = factor(folset | CMULT | CDIV | CAND | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPAR_ABR | CNEG);
+	atributos_sintetizados as = factor(folset | CMULT | CDIV | CAND | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPAR_ABR | CNEG, tipoh);
 	atributos_sintetizados as2 = {NIL,NIL,NULL, NIL};
 	test(CMULT | CDIV | CAND | folset , CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPAR_ABR | CNEG , 65 );
 	while(lookahead_in(CMULT | CDIV | CAND | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPAR_ABR | CNEG))
@@ -718,7 +924,7 @@ atributos_sintetizados termino(set folset)
 				error_handler(65);
 				break;
 		}
-		as2 = factor(folset | CMULT | CDIV | CAND | CMULT | CDIV | CAND | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPAR_ABR | CNEG);
+		as2 = factor(folset | CMULT | CDIV | CAND | CMULT | CDIV | CAND | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPAR_ABR | CNEG, tipoh);
 
 		// Control semantico
 		int tipoAS, tipoAS2;
@@ -753,13 +959,28 @@ atributos_sintetizados termino(set folset)
 			default:
 				break;
 		}
+		if(GEN){
+			switch (op){
+				case CMULT:
+					CODE[lcode++] = MUL;
+					break;
+				case CDIV:
+					CODE[lcode++] = DIV;
+					break;
+					
+				case CAND:
+					CODE[lcode++] = AND;
+					break;
+			}			
+			CODE[lcode++] = as.tipo -1;
+		}
 	}
 
 	return as;
 }
 
 
-atributos_sintetizados factor(set folset)
+atributos_sintetizados factor(set folset, int tipoh)
 {
 	atributos_sintetizados as = {NIL, NIL, NULL, NIL};
 
@@ -778,8 +999,34 @@ atributos_sintetizados factor(set folset)
 						break;
 					case CLASPAR:
 					case CLASVAR:
-					case CLASVARSTRUCT:
-						as = variable(folset, NULL);	
+					case CLASVARSTRUCT:{
+						as = variable(folset, NULL);
+						
+						if(GEN & ts[posicionEnT].ets->clase == CLASVAR){
+							if(tipoh == -1 || tipoh == as.tipo ){
+								CODE[lcode++] = CRVL;
+								CODE[lcode++] = ts[posicionEnT].ets->desc.nivel;
+								CODE[lcode++] = ts[posicionEnT].ets->desc.despl;
+								CODE[lcode++] = as.tipo -1;
+							}else if(tipoh < as.tipo){
+								CODE[lcode++] = CAST;
+								CODE[lcode++] = tipoh -1;
+								CODE[lcode++] = as.tipo -1;
+								CODE[lcode++] = CRVL;
+								CODE[lcode++] = ts[posicionEnT].ets->desc.nivel;
+								CODE[lcode++] = ts[posicionEnT].ets->desc.despl;
+								CODE[lcode++] = as.tipo -1;
+							}else{
+								CODE[lcode++] = CRVL;
+								CODE[lcode++] = ts[posicionEnT].ets->desc.nivel;
+								CODE[lcode++] = ts[posicionEnT].ets->desc.despl;
+								CODE[lcode++] = as.tipo -1;
+								CODE[lcode++] = CAST;
+								CODE[lcode++] = as.tipo -1;
+								CODE[lcode++] = tipoh -1;
+							}
+						}
+					}
 				}
 			}else {
 				// TODO 
@@ -798,7 +1045,36 @@ atributos_sintetizados factor(set folset)
 		case CCONS_ENT:
 		case CCONS_FLO:
 		case CCONS_CAR:
+			
 			as = constante(folset);
+			
+			if(GEN){ 
+					if(tipoh == -1 || tipoh == as.tipo ){
+						CODE[lcode++] = CRCT;
+						if(as.tipo==1)CODE[lcode++] = as.literalEntero[1];
+						else CODE[lcode++] = atof(as.literalEntero);
+						CODE[lcode++] = as.tipo -1;
+					}else{ 
+						if(tipoh < as.tipo){
+							CODE[lcode++] = CAST;
+							CODE[lcode++] = tipoh -1;
+							CODE[lcode++] = as.tipo -1;
+							CODE[lcode++] = CRCT;
+							if(as.tipo==1)CODE[lcode++] = as.literalEntero[1];
+							else CODE[lcode++] = atof(as.literalEntero);
+							CODE[lcode++] = as.tipo -1;
+						}
+						else{
+							CODE[lcode++] = CRCT;
+							if(as.tipo==1)CODE[lcode++] = as.literalEntero[1];
+							else CODE[lcode++] = atof(as.literalEntero);
+							CODE[lcode++] = as.tipo -1;
+							CODE[lcode++] = CAST;
+							CODE[lcode++] = as.tipo -1;
+							CODE[lcode++] = tipoh -1;
+						}
+					}	
+			}
 			break;
 		
 		case CCONS_STR:
@@ -818,6 +1094,10 @@ atributos_sintetizados factor(set folset)
 			scanner();
 			//CUANDO RETORNE EXPRESION
 			as = expresion(folset);
+			if(GEN){
+				CODE[lcode++] = NEG;
+				CODE[lcode++] = as.tipo -1;
+			}
 			break;
 			
 		default:

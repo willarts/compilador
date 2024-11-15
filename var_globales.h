@@ -1,4 +1,6 @@
 #define TAM_LEXEMA 200
+#define TAM_PROG 5000
+
 
 typedef long long set;
 

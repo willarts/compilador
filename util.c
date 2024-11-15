@@ -4,7 +4,7 @@
 #include "util.h"
 #include "codigos.h"
 #include "error.h"
-
+#include "sistejec.h"
 
 void scanner()
 {	
@@ -48,9 +48,18 @@ void init_parser(int argc, char *argv[])
 		}
 		else
 		{
-			error_handler(7);
-			error_handler(COD_IMP_ERRORES);
-			exit(1);
+			if (strcmp(argv[1], "-o") == 0)
+			{
+				cargar_codgen(argv[2]);
+				impr_codgen();
+				interprete();
+				exit(1);
+			}
+			else{
+				error_handler(7);
+				error_handler(COD_IMP_ERRORES);
+				exit(1);
+			}
 		}
 	}
 

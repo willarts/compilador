@@ -1,8 +1,13 @@
 #include "parser.h"
+#include "commun.h"
+
 int mainDeclarado = 0;
 int GEN = 1;
+float literal= 0;
+int constTipo = -1;
 int main(int argc, char *argv[])
 {
+	printf("***********************valar gen : %d   ", GEN);
 	init_parser(argc, argv);
 
 	inic_tablas();
@@ -53,6 +58,7 @@ void unidad_traduccion(set folset)
 		CODE[lcode++] = PARAR;
 		impr_codgen2();
 	}
+	
 	
 }
 
@@ -238,6 +244,17 @@ void lista_declaraciones_init(set folset, int stipo)
 		if(GEN){
 			CODE[lcode++] = ALOC;
 			CODE[lcode++] = tamVar;
+			if(constTipo != -1){
+				CODE[lcode++] = CRCT;
+				CODE[lcode++] = literal;
+				CODE[lcode++] = constTipo;
+				CODE[lcode++] = ALM;
+				CODE[lcode++] = get_nivel();
+				CODE[lcode++] = desplazamiento;
+				CODE[lcode++] = constTipo;
+				literal = 0;
+				constTipo = -1;
+			}
 		}
 		inf_id->desc.despl = desplazamiento;	
 		desplazamiento += tamVar;
@@ -266,7 +283,18 @@ void lista_declaraciones_init(set folset, int stipo)
 			int tamVar= tamTipo(stipo);
 			if(GEN){
 				CODE[lcode++] = ALOC;
-				CODE[lcode++] = tamVar;
+				CODE[lcode++] = tamVar;	
+				if(constTipo != -1){
+					CODE[lcode++] = CRCT;
+					CODE[lcode++] = literal;
+					CODE[lcode++] = constTipo;
+					CODE[lcode++] = ALM;
+					CODE[lcode++] = get_nivel();
+					CODE[lcode++] = desplazamiento;
+					CODE[lcode++] = constTipo;
+					literal = 0;
+					constTipo = -1;
+				}
 			}
 			inf_id->desc.despl = desplazamiento;	
 			desplazamiento += tamVar;
@@ -293,6 +321,17 @@ void declaracion_variable(set folset)
 		if(GEN){
 			CODE[lcode++] = ALOC;
 			CODE[lcode++] = tamVar;
+			if(constTipo != -1){
+					CODE[lcode++] = CRCT;
+					CODE[lcode++] = literal;
+					CODE[lcode++] = constTipo;
+					CODE[lcode++] = ALM;
+					CODE[lcode++] = get_nivel();
+					CODE[lcode++] = desplazamiento;
+					CODE[lcode++] = constTipo;
+					literal = 0;
+					constTipo = -1;
+			}
 		}
 		inf_id->desc.despl = desplazamiento;	
 		desplazamiento += tamVar;
@@ -321,6 +360,8 @@ int declarador_init(set folset, int hTipo)
 {
 	int isArr=0;
 	int entero = NIL;
+	literal= 0;
+	constTipo = -1;
 	atributos_sintetizados as = {NIL,NIL,NULL, NIL};
 	test(CASIGNAC | CCOR_ABR | CCOMA | CPYCOMA | folset, CCOR_CIE | CLLA_ABR | CLLA_CIE | CCONS_FLO | CCONS_CAR , 47);
 	switch(lookahead())
@@ -329,7 +370,12 @@ int declarador_init(set folset, int hTipo)
 		case CCONS_CAR:
 		case CASIGNAC:
 			match(CASIGNAC, 66);
-			constante(folset);
+			atributos_sintetizados as = constante(folset);
+			if(as.tipo==1)literal= as.literalEntero[1];
+			else literal= atof(as.literalEntero);
+			constTipo = as.tipo -1;
+			
+		int constTipo = -1;
 			break;
 
 		case CCOR_ABR:
@@ -559,7 +605,7 @@ void proposicion_iteracion(set folset)
 	match(CPAR_CIE, 21);
 	if(GEN){
 		CODE[lcode++] = BIFF;
-		CODE[lcode++] = asE.tipo;
+		CODE[lcode++] = asE.tipo -1;
 	}
 	int salidaWhile = lcode;
 	lcode++;
@@ -761,7 +807,7 @@ atributos_sintetizados expresion(set folset)
 {
 	char  miLexema[10];
 	strcpy(miLexema, lexema());
-	atributos_sintetizados asE1 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR), asEN;
+	atributos_sintetizados asE1 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR, -1), asEN;
 	asEN = asE1;
 	int error = 0, esAsign = 0,op = 0;
 	test(CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | folset, NADA, 69);
@@ -775,7 +821,7 @@ atributos_sintetizados expresion(set folset)
 				scanner();
 				if(asE1.variable == NIL)
 					error_handler(82);
-				asEN = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
+				asEN = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR,-1);
 				if(asE1.variable == 2 || asEN.variable == 2)
 					error_handler(81);
 				break;
@@ -788,7 +834,7 @@ atributos_sintetizados expresion(set folset)
 			case CMAIG:
 				op = lookahead();
 				scanner();
-				asE2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR);
+				asE2 = expresion_simple(folset | CASIGNAC | CDISTINTO | CIGUAL | CMENOR | CMEIG | CMAYOR | CMAIG | CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR,asE1.tipo);
 				int tipoE2 = asE2.tipo != TARREGLO? asE2.tipo : asE2.tipo_base;
 				int tipoEN = asEN.tipo != TARREGLO? asEN.tipo : asEN.tipo_base;
 				if((tipoEN == TVOID || tipoEN == TERROR || tipoE2 == TVOID || tipoE2 == TERROR) && error == 0 ) {
@@ -849,13 +895,13 @@ atributos_sintetizados expresion(set folset)
 }
 
 
-atributos_sintetizados expresion_simple(set folset)
+atributos_sintetizados expresion_simple(set folset, int tipoh)
 {
 	test(CMAS | CMENOS | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR, folset | COR, 56);
 	if(lookahead_in(CMAS | CMENOS))
 		scanner();
 		
-	atributos_sintetizados asT1 = termino(folset | CMAS | CMENOS |COR | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR, -1);
+	atributos_sintetizados asT1 = termino(folset | CMAS | CMENOS |COR | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR, tipoh);
 	int tipoT1 = asT1.tipo != TARREGLO? asT1.tipo : asT1.tipo_base;
 	test(CMAS | CMENOS | COR | folset, CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR, 65);
 	while(lookahead_in(CMAS | CMENOS | COR | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CNEG | CPAR_ABR | CCONS_STR))
@@ -924,7 +970,7 @@ atributos_sintetizados termino(set folset, int tipoh)
 				error_handler(65);
 				break;
 		}
-		as2 = factor(folset | CMULT | CDIV | CAND | CMULT | CDIV | CAND | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPAR_ABR | CNEG, tipoh);
+		as2 = factor(folset | CMULT | CDIV | CAND | CMULT | CDIV | CAND | CIDENT | CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR | CPAR_ABR | CNEG, as.tipo);
 
 		// Control semantico
 		int tipoAS, tipoAS2;

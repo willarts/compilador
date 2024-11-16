@@ -6,3 +6,4 @@ int cant_errores_x_linea;
 void error_print(int);
 void error_handler(int);
 
+

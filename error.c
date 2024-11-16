@@ -2,6 +2,7 @@
 #include <string.h>
 #include "error.h"
 #include "var_globales.h"
+#include "commun.h"
 
 extern int last_call;
 int hubo_error=0;
@@ -9,6 +10,7 @@ int hubo_error=0;
 
 void error_print(int ne)
 {
+	GEN = 0;
 	switch(ne)
 	{
 		/* errores de scanner */
@@ -125,7 +127,6 @@ void error_print(int ne)
 
 void error_handler(int ne)
 {	
-//GEN = 0;
 int i;
 hubo_error++;
 if(last_call){

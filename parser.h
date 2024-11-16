@@ -272,3 +272,4 @@ int tamTipo (int tipo){
 		}
 	return tam;
 }
+//int GEN= 1;

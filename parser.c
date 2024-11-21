@@ -5,9 +5,10 @@ int mainDeclarado = 0;
 int GEN = 1;
 float literal= 0;
 int constTipo = -1;
+int cantBytes[100];
 int main(int argc, char *argv[])
 {
-	printf("***********************valar gen : %d   ", GEN);
+	
 	init_parser(argc, argv);
 
 	inic_tablas();
@@ -15,6 +16,20 @@ int main(int argc, char *argv[])
 	unidad_traduccion(CEOF);
 
 	match(CEOF, 9);
+	if(GEN){
+		int i;
+		for (i = 0; argv[2][i] != '\0'; ++i)
+		{
+			
+		}
+		argv[2][i] = '\0';
+		argv[2][i-1] = 'o';
+
+		if ( guardar_codgen(CODE, CS, argv[2]) == 0 )	//Se crea y se guarda el archivo .o con la memoria de programa generado y constantes string
+		{
+			printf("Error al guardar archivo\n");
+		}
+	}
 
 	last_call=1;
 
@@ -47,6 +62,10 @@ void unidad_traduccion(set folset)
 	if(en_tabla("main") == NIL)
 		error_handler(84);
 	if(GEN){
+		if(cantBytes[get_nivel()]!=0){
+			CODE[lcode++] = DMEM;
+			CODE[lcode++] = cantBytes[get_nivel()];
+		}
 		CODE[lcode++] = FINB;
 		CODE[lcode++] = get_nivel();
 	}
@@ -56,7 +75,7 @@ void unidad_traduccion(set folset)
 		
 	if (GEN) {
 		CODE[lcode++] = PARAR;
-		impr_codgen2();
+		//impr_codgen2();
 	}
 	
 	
@@ -148,7 +167,6 @@ void definicion_funcion(set folset)
 	int tipoFuncion = inf_id->ptr_tipo;
 	insertarTS();
 	match(CPAR_ABR, 20);
-
 	pushTB();// abre bloque de funcion.
 	if(GEN){
 		CODE[lcode++] = ENBL;
@@ -166,6 +184,10 @@ void definicion_funcion(set folset)
 	//int isFuncion = 1;
 	proposicion_compuesta(folset, 1, tipoFuncion); 
 	if(GEN){
+		if(cantBytes[get_nivel()]!=0){
+			CODE[lcode++] = DMEM;
+			CODE[lcode++] = cantBytes[get_nivel()];
+		}
 		CODE[lcode++] = FINB;
 		CODE[lcode++] = get_nivel();
 	}
@@ -246,8 +268,8 @@ void lista_declaraciones_init(set folset, int stipo)
 			CODE[lcode++] = tamVar;
 			if(constTipo != -1){
 				CODE[lcode++] = CRCT;
-				CODE[lcode++] = literal;
 				CODE[lcode++] = constTipo;
+				CODE[lcode++] = literal;
 				CODE[lcode++] = ALM;
 				CODE[lcode++] = get_nivel();
 				CODE[lcode++] = desplazamiento;
@@ -258,6 +280,7 @@ void lista_declaraciones_init(set folset, int stipo)
 		}
 		inf_id->desc.despl = desplazamiento;	
 		desplazamiento += tamVar;
+		cantBytes[get_nivel()] = desplazamiento;
 
 	}
 	else{
@@ -286,8 +309,8 @@ void lista_declaraciones_init(set folset, int stipo)
 				CODE[lcode++] = tamVar;	
 				if(constTipo != -1){
 					CODE[lcode++] = CRCT;
-					CODE[lcode++] = literal;
 					CODE[lcode++] = constTipo;
+					CODE[lcode++] = literal;
 					CODE[lcode++] = ALM;
 					CODE[lcode++] = get_nivel();
 					CODE[lcode++] = desplazamiento;
@@ -298,6 +321,7 @@ void lista_declaraciones_init(set folset, int stipo)
 			}
 			inf_id->desc.despl = desplazamiento;	
 			desplazamiento += tamVar;
+			cantBytes[get_nivel()] = desplazamiento;
 		}
 		else{
 			inf_id->clase = CLASVARSTRUCT;
@@ -323,8 +347,8 @@ void declaracion_variable(set folset)
 			CODE[lcode++] = tamVar;
 			if(constTipo != -1){
 					CODE[lcode++] = CRCT;
-					CODE[lcode++] = literal;
 					CODE[lcode++] = constTipo;
+					CODE[lcode++] = literal;
 					CODE[lcode++] = ALM;
 					CODE[lcode++] = get_nivel();
 					CODE[lcode++] = desplazamiento;
@@ -335,6 +359,7 @@ void declaracion_variable(set folset)
 		}
 		inf_id->desc.despl = desplazamiento;	
 		desplazamiento += tamVar;
+		cantBytes[get_nivel()] = desplazamiento;
 	}
 	else {
 		inf_id->clase = CLASVARSTRUCT;
@@ -371,8 +396,9 @@ int declarador_init(set folset, int hTipo)
 		case CASIGNAC:
 			match(CASIGNAC, 66);
 			atributos_sintetizados as = constante(folset);
-			if(as.tipo==1)literal= as.literalEntero[1];
-			else literal= atof(as.literalEntero);
+			if(as.tipo==TCHAR)literal= (float) as.literalEntero[1];
+			else if(as.tipo==TINT)literal= (float) atoi(as.literalEntero);
+				 else literal = atof(as.literalEntero);
 			constTipo = as.tipo -1;
 			
 		int constTipo = -1;
@@ -479,6 +505,10 @@ void proposicion_compuesta(set folset, int isFuncion, int tipoFuncion)
 	match(CLLA_CIE, 25);
 	if (!isFuncion) { 
 		if(GEN){
+			if(cantBytes[get_nivel()]!=0){
+				CODE[lcode++] = DMEM;
+				CODE[lcode++] = cantBytes[get_nivel()];
+			}
 			CODE[lcode++] = FINB;
 			CODE[lcode++] = get_nivel();
 		}
@@ -591,13 +621,13 @@ atributos_sintetizados proposicion(set folset)
 
 
 void proposicion_iteracion(set folset)
-{
+{	
 	atributos_sintetizados asE;
 	match(CWHILE, 27);
 
 	match(CPAR_ABR, 20);
 
-	int labelExp = lcode;
+	int labelExp = lcode + 1;
 	
 	asE = expresion(folset | CPAR_CIE | CLLA_ABR | CMAS | CMENOS | CIDENT | CPAR_ABR | CNEG |
 							 CCONS_ENT | CCONS_FLO | CCONS_CAR | CCONS_STR |
@@ -615,8 +645,8 @@ void proposicion_iteracion(set folset)
 
 	if(GEN){
 		CODE[lcode++] = BIFS;
-		CODE[lcode++] = labelExp;
-		CODE[salidaWhile]= lcode;
+		CODE[lcode++] = labelExp - lcode;
+		CODE[salidaWhile]= lcode -  salidaWhile;
 	}
 }
 
@@ -721,6 +751,8 @@ void proposicion_e_s(set folset)
 						CS[lcs]= CSAUX[i];
 						lcs++;
 					}
+					CS[lcs] = '\0';
+					lcs++;
 					CODE[lcode++] = IMPRCS;	
 					stringFlag = 0;
 				}
@@ -756,6 +788,8 @@ void proposicion_e_s(set folset)
 							CS[lcs]= CSAUX[i];
 							lcs++;
 						}
+						CS[lcs] = '\0';
+						lcs++;
 						CODE[lcode++] = IMPRCS;	
 						stringFlag = 0;
 					}
@@ -1047,29 +1081,30 @@ atributos_sintetizados factor(set folset, int tipoh)
 					case CLASVAR:
 					case CLASVARSTRUCT:{
 						as = variable(folset, NULL);
-						
-						if(GEN & ts[posicionEnT].ets->clase == CLASVAR){
-							if(tipoh == -1 || tipoh == as.tipo ){
-								CODE[lcode++] = CRVL;
-								CODE[lcode++] = ts[posicionEnT].ets->desc.nivel;
-								CODE[lcode++] = ts[posicionEnT].ets->desc.despl;
-								CODE[lcode++] = as.tipo -1;
-							}else if(tipoh < as.tipo){
-								CODE[lcode++] = CAST;
-								CODE[lcode++] = tipoh -1;
-								CODE[lcode++] = as.tipo -1;
-								CODE[lcode++] = CRVL;
-								CODE[lcode++] = ts[posicionEnT].ets->desc.nivel;
-								CODE[lcode++] = ts[posicionEnT].ets->desc.despl;
-								CODE[lcode++] = as.tipo -1;
-							}else{
-								CODE[lcode++] = CRVL;
-								CODE[lcode++] = ts[posicionEnT].ets->desc.nivel;
-								CODE[lcode++] = ts[posicionEnT].ets->desc.despl;
-								CODE[lcode++] = as.tipo -1;
-								CODE[lcode++] = CAST;
-								CODE[lcode++] = as.tipo -1;
-								CODE[lcode++] = tipoh -1;
+						if(lookahead () != CASIGNAC){
+							if(GEN & ts[posicionEnT].ets->clase == CLASVAR){
+								if(tipoh == -1 || tipoh == as.tipo ){
+									CODE[lcode++] = CRVL;
+									CODE[lcode++] = ts[posicionEnT].ets->desc.nivel;
+									CODE[lcode++] = ts[posicionEnT].ets->desc.despl;
+									CODE[lcode++] = as.tipo -1;
+								}else if(tipoh < as.tipo){
+									CODE[lcode++] = CAST;
+									CODE[lcode++] = tipoh -1;
+									CODE[lcode++] = as.tipo -1;
+									CODE[lcode++] = CRVL;
+									CODE[lcode++] = ts[posicionEnT].ets->desc.nivel;
+									CODE[lcode++] = ts[posicionEnT].ets->desc.despl;
+									CODE[lcode++] = as.tipo -1;
+								}else{
+									CODE[lcode++] = CRVL;
+									CODE[lcode++] = ts[posicionEnT].ets->desc.nivel;
+									CODE[lcode++] = ts[posicionEnT].ets->desc.despl;
+									CODE[lcode++] = as.tipo -1;
+									CODE[lcode++] = CAST;
+									CODE[lcode++] = as.tipo -1;
+									CODE[lcode++] = tipoh -1;
+								}
 							}
 						}
 					}
@@ -1097,24 +1132,30 @@ atributos_sintetizados factor(set folset, int tipoh)
 			if(GEN){ 
 					if(tipoh == -1 || tipoh == as.tipo ){
 						CODE[lcode++] = CRCT;
-						if(as.tipo==1)CODE[lcode++] = as.literalEntero[1];
-						else CODE[lcode++] = atof(as.literalEntero);
 						CODE[lcode++] = as.tipo -1;
+						if(as.tipo==TCHAR)CODE[lcode++] = (float) as.literalEntero[1];
+						else if(as.tipo == TINT) CODE[lcode++] = (float) atoi(as.literalEntero);
+							else CODE[lcode++] = atof(as.literalEntero);
+						
 					}else{ 
 						if(tipoh < as.tipo){
 							CODE[lcode++] = CAST;
 							CODE[lcode++] = tipoh -1;
 							CODE[lcode++] = as.tipo -1;
 							CODE[lcode++] = CRCT;
-							if(as.tipo==1)CODE[lcode++] = as.literalEntero[1];
-							else CODE[lcode++] = atof(as.literalEntero);
 							CODE[lcode++] = as.tipo -1;
+							if(as.tipo==TCHAR)CODE[lcode++] = (float) as.literalEntero[1];
+								if(as.tipo == TINT) CODE[lcode++] = (float) atoi(as.literalEntero);
+								else CODE[lcode++] = atof(as.literalEntero);
+							
 						}
 						else{
 							CODE[lcode++] = CRCT;
-							if(as.tipo==1)CODE[lcode++] = as.literalEntero[1];
-							else CODE[lcode++] = atof(as.literalEntero);
 							CODE[lcode++] = as.tipo -1;
+							if(as.tipo==TCHAR)CODE[lcode++] =(float) as.literalEntero[1];
+								if(as.tipo == TINT) CODE[lcode++] = (float) atoi(as.literalEntero);
+								else CODE[lcode++] = atof(as.literalEntero);
+							
 							CODE[lcode++] = CAST;
 							CODE[lcode++] = as.tipo -1;
 							CODE[lcode++] = tipoh -1;

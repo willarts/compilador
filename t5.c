@@ -1,15 +1,15 @@
-# Definición de funciones simples en distintos niveles#
-int a = 10;
+
+int a = 4;
 float b = 3.14;
 char c = 'A';
 
 void main() {
     int i = 0, sum = 0;
-
-    while (i || 10.2) {
-        int k = 2;
+    while (i < a) {
         sum = sum + i; 
         i= i + 1;
     }
+    cout << "float: " << b << " char: " << c << " Suma:" << sum;
 }
+
 
